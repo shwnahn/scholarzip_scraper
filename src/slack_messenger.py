@@ -65,15 +65,18 @@ def send_slack_failure_json(config_key, slack_client, channel, failure_data):
         else:
             # 메시지 구성
             formatted_list = []
-            for idx, (org_name, errors) in enumerate(failure_data.items(), start=1):
-                # 기관별 에러를 묶음
-                descriptions = "\n".join(f"- {error.get('description', 'No description provided')}" for error in errors)
-                formatted_list.append(f"{org_name} ({idx}):\n{descriptions}")
+            if config_key == "univ":
+                for idx, (org_name, errors) in enumerate(failure_data.items(), start=1):
+                    # 기관별 에러를 묶음
+                    descriptions = "\n".join(f"- {error.get('description', 'No description provided')}" for error in errors)
+                    formatted_list.append(f"{org_name} ({idx}):\n{descriptions}")
 
-            message = (
-                f":warning: {config_key} 크롤링 실패 목록 ({len(formatted_list)} 건)\n\n"
-                + "\n\n".join(formatted_list)
-            )
+                message = (
+                    f":warning: {config_key} 크롤링 실패 목록 ({len(formatted_list)} 건)\n\n"
+                    + "\n\n".join(formatted_list)
+                )
+            else:
+                message = f":white_check_mark: {config_key} 크롤링 실패 데이터가 없습니다."
 
         # Slack 메시지 전송
         response = slack_client.chat_postMessage(channel=channel, text=message)
