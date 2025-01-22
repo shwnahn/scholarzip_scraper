@@ -50,44 +50,6 @@ def send_slack_opening(config_key, slack_client, channel):
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-def send_slack_failure_json(config_key, slack_client, channel, failure_data):
-    """
-    실패한 크롤링 목록을 슬랙으로 전송합니다.
-
-    :param config_key: 설정 키
-    :param slack_client: Slack 클라이언트 객체
-    :param channel: Slack 채널
-    :param failure_data: 실패한 크롤링 데이터 (JSON 형식)
-    """
-    try:
-        if not failure_data:
-            message = f":white_check_mark: {config_key} 크롤링 실패 데이터가 없습니다."
-        else:
-            # 메시지 구성
-            formatted_list = []
-            if config_key == "univ":
-                for idx, (org_name, errors) in enumerate(failure_data.items(), start=1):
-                    # 기관별 에러를 묶음
-                    descriptions = "\n".join(f"- {error.get('description', 'No description provided')}" for error in errors)
-                    formatted_list.append(f"{org_name} ({idx}):\n{descriptions}")
-
-                message = (
-                    f":warning: {config_key} 크롤링 실패 목록 ({len(formatted_list)} 건)\n\n"
-                    + "\n\n".join(formatted_list)
-                )
-            else:
-                message = f":white_check_mark: {config_key} 크롤링 실패 데이터가 없습니다."
-
-        # Slack 메시지 전송
-        response = slack_client.chat_postMessage(channel=channel, text=message)
-        if response["ok"]:
-            return {"status": "success"}
-        else:
-            return {"status": "error", "error": response["error"]}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-
-
 def send_slack_scholarship(client, channel_id, org_name, details, link):
     """
     Slack 채널에 메시지를 전송하는 함수.
@@ -133,7 +95,11 @@ def send_slack_failure_list(config_key, slack_client, channel, failure_list):
     :param failure_list: 실패한 크롤링 목록
     """
     try:
-        message = f":warning: {config_key} 크롤링 실패 목록 ({len(failure_list)} 건)\n" + "\n".join(failure_list)
+        if config_key == "univ":
+            message = f":warning: {config_key} 크롤링 실패 목록 ({len(failure_list)} 건)\n" + "\n".join(failure_list)
+        else:
+            message = f":warning: {config_key} 크롤링 실패({len(failure_list)} 건)\n (상세 내용 생략)"
+        
         response = slack_client.chat_postMessage(channel=channel, text=message)
         if response["ok"]:
             return {"status": "success"}
@@ -142,6 +108,45 @@ def send_slack_failure_list(config_key, slack_client, channel, failure_list):
     except Exception as e:
         return {"status": "error", "error": str(e)}
         
+
+def send_slack_failure_json(config_key, slack_client, channel, failure_data):
+    """
+    실패한 크롤링 목록을 슬랙으로 전송합니다.
+
+    :param config_key: 설정 키
+    :param slack_client: Slack 클라이언트 객체
+    :param channel: Slack 채널
+    :param failure_data: 실패한 크롤링 데이터 (JSON 형식)
+    """
+    try:
+        if not failure_data:
+            message = f":white_check_mark: {config_key} 크롤링 실패 데이터가 없습니다."
+        else:
+            # 메시지 구성
+            formatted_list = []
+            if config_key == "univ":
+                for idx, (org_name, errors) in enumerate(failure_data.items(), start=1):
+                    # 기관별 에러를 묶음
+                    descriptions = "\n".join(f"- {error.get('description', 'No description provided')}" for error in errors)
+                    formatted_list.append(f"{org_name} ({idx}):\n{descriptions}")
+
+                message = (
+                    f":warning: {config_key} 크롤링 실패 목록 ({len(formatted_list)} 건)\n\n"
+                    + "\n\n".join(formatted_list)
+                )
+            else:
+                message = f":white_check_mark: {config_key} 크롤링 실패 데이터가 없습니다."
+
+        # Slack 메시지 전송
+        response = slack_client.chat_postMessage(channel=channel, text=message)
+        if response["ok"]:
+            return {"status": "success"}
+        else:
+            return {"status": "error", "error": response["error"]}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
 
 ## TEST CODE
 # from dotenv import load_dotenv
